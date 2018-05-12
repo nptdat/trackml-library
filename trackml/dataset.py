@@ -107,7 +107,7 @@ def load_event(prefix, parts=DEFAULT_PARTS):
     """
     return tuple(_load_event_data(prefix, name) for name in parts)
 
-def load_dataset(path, skip=None, nevents=None, parts=DEFAULT_PARTS):
+def load_dataset(path, skip=None, nevents=None, parts=DEFAULT_PARTS, filter_events=None):
     """Provide an iterator over (all) events in a dataset.
 
     Parameters
@@ -120,7 +120,8 @@ def load_dataset(path, skip=None, nevents=None, parts=DEFAULT_PARTS):
         Only load a maximum of `nevents` events.
     parts : List[{'hits', 'cells', 'particles', 'truth'}], optional
         Which parts of each event files to load.
-
+    filter_events: List, optional
+        A list of numerical identifiers of events to load. E.g., [1234, 1395]
     Yields
     ------
     event_id : int
@@ -133,7 +134,10 @@ def load_dataset(path, skip=None, nevents=None, parts=DEFAULT_PARTS):
         # Note: the file names may optionally have a directory prefix if they
         # are derived from a zipfile, for example. Hence the regular expression
         # can't be anchored at the beginning of the file name.
-        regex = re.compile('.*event\d{9}-[a-zA-Z]+.csv$')
+        if filter_events is None:
+            regex = re.compile('.*event\d{9}-[a-zA-Z]+.csv$')
+        else:
+            regex = re.compile('.*event({})-[a-zA-Z]+.csv$'.format('|'.join(['%.9d' % eid for eid in filter_events])))
         files = filter(regex.match, files)
         prefixes = set(_.split('-', 1)[0] for _ in files)
         prefixes = sorted(prefixes)
